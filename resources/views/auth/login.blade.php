@@ -58,12 +58,6 @@
                     </button>
                 </div>
             </form>
-
-            <!-- Register -->
-            <div class="text-center mt-4">
-                <span class="text-muted">Don’t have an account?</span>
-                    <!-- Registration disabled: users must be added by an administrator -->
-            </div>
         </div>
     </div>
 </x-guest-layout>
