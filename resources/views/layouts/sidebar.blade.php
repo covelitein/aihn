@@ -316,29 +316,37 @@
                         <div class="section-divider"></div>
                         <span class="section-label">Administration</span>
 
+                        
+
+                        @if(!auth()->user()?->is_mentor)
+                            <li class="nav-item">
+                                <a href="{{ route('admin.subscribers.index') }}"
+                                    class="nav-link {{ request()->routeIs('admin.subscribers.*') ? 'active' : '' }}">
+                                    <i class="bi bi-people"></i>
+                                    <span class="nav-text">Users</span>
+                                </a>
+                            </li>
+                        @endif
+
+                        @can('superadmin')
+                            <li class="nav-item">
+                                <a href="{{ route('admin.admins.index') }}"
+                                    class="nav-link {{ request()->routeIs('admin.admins.*') ? 'active' : '' }}">
+                                    <i class="bi bi-shield-lock"></i>
+                                    <span class="nav-text">Admins</span>
+                                </a>
+                            </li>
+                        @endcan
+
                         <li class="nav-item">
-                            <a href="{{ route('admin.subscriptions.index') }}"
-                                class="nav-link {{ request()->routeIs('admin.subscriptions.*') ? 'active' : '' }}">
-                                <i class="bi bi-clipboard-check"></i>
-                                <span class="nav-text">Applications</span>
+                            <a href="{{ route('admin.mentors.index') }}"
+                                class="nav-link {{ request()->routeIs('admin.mentors.*') ? 'active' : '' }}">
+                                <i class="bi bi-person-badge"></i>
+                                <span class="nav-text">Mentors</span>
                             </a>
                         </li>
 
-                        <li class="nav-item">
-                            <a href="{{ route('admin.subscribers.index') }}"
-                                class="nav-link {{ request()->routeIs('admin.subscribers.*') ? 'active' : '' }}">
-                                <i class="bi bi-people"></i>
-                                <span class="nav-text">Subscribers</span>
-                            </a>
-                        </li>
-
-                        <li class="nav-item">
-                            <a href="{{ route('admin.subscription.plans.index') }}"
-                                class="nav-link {{ request()->routeIs('admin.subscription.plans.*') ? 'active' : '' }}">
-                                <i class="bi bi-tags"></i>
-                                <span class="nav-text">Manage Plans</span>
-                            </a>
-                        </li>
+                        <!-- Plan management removed: platform uses admin-provisioned access -->
 
                         <li class="nav-item">
                             <a href="{{ route('admin.content.index') }}"
@@ -349,22 +357,19 @@
                         </li>
                     @endif
                 @else
-                    <!-- SUBSCRIPTION SECTION (Public app area) -->
-                    <span class="section-label">Subscription</span>
-
+                    <!-- Subscription UI removed: users are provisioned by admin -->
+                    <div class="section-divider"></div>
+                    <span class="section-label">Access</span>
                     <li class="nav-item">
-                        <a href="{{ route('subscription.plans') }}"
-                            class="nav-link {{ request()->routeIs('subscription.plans') ? 'active' : '' }}">
-                            <i class="bi bi-grid"></i>
-                            <span class="nav-text">Available Plans</span>
+                        <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                            <i class="bi bi-person-check"></i>
+                            <span class="nav-text">Account Overview</span>
                         </a>
                     </li>
-
                     <li class="nav-item">
-                        <a href="{{ route('subscription.status') }}"
-                            class="nav-link {{ request()->routeIs('subscription.status') ? 'active' : '' }}">
-                            <i class="bi bi-clock-history"></i>
-                            <span class="nav-text">My Subscription</span>
+                        <a href="{{ route('mentors.index') }}" class="nav-link {{ request()->routeIs('mentors.*') ? 'active' : '' }}">
+                            <i class="bi bi-people"></i>
+                            <span class="nav-text">Mentors</span>
                         </a>
                     </li>
                 @endif
@@ -398,10 +403,7 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="{{ route('register') }}" class="nav-link">
-                        <i class="bi bi-person-plus"></i>
-                        <span class="nav-text">Register</span>
-                    </a>
+                    <!-- Registration removed: users are created by admins -->
                 </li>
             @endauth
         </ul>
@@ -414,29 +416,65 @@
         const overlay = document.getElementById('sidebarOverlay');
         const toggleBtn = document.getElementById('sidebarToggle');
         const closeBtn = document.getElementById('sidebarClose');
+        const mobileToggle = document.getElementById('mobileMenuToggle');
+
+        function openSidebarMobile() {
+            sidebar.classList.add('show');
+            overlay.classList.add('show');
+            document.body.classList.add('sidebar-open');
+            // Notify other controllers that the sidebar has opened
+            document.dispatchEvent(new CustomEvent('sidebarOpened'));
+        }
+
+        function closeSidebarMobile() {
+            sidebar.classList.remove('show');
+            overlay.classList.remove('show');
+            document.body.classList.remove('sidebar-open');
+            // Notify other controllers that the sidebar has closed
+            document.dispatchEvent(new CustomEvent('sidebarClosed'));
+        }
 
         if (toggleBtn) {
             toggleBtn.addEventListener('click', () => {
-                sidebar.classList.toggle('collapsed');
-                document.dispatchEvent(new CustomEvent('sidebarToggle', { detail: { collapsed: sidebar.classList.contains('collapsed') } }));
+                // On small screens, open as mobile; on large screens, collapse
+                if (window.innerWidth <= 1330) {
+                    openSidebarMobile();
+                } else {
+                    sidebar.classList.toggle('collapsed');
+                    document.dispatchEvent(new CustomEvent('sidebarToggle', { detail: { collapsed: sidebar.classList.contains('collapsed') } }));
+                }
             });
         }
 
         if (closeBtn) {
             closeBtn.addEventListener('click', () => {
-                sidebar.classList.remove('show');
-                overlay.classList.remove('show');
+                closeSidebarMobile();
             });
         }
 
-        overlay.addEventListener('click', () => {
-            sidebar.classList.remove('show');
-            overlay.classList.remove('show');
-        });
+        if (mobileToggle) {
+            mobileToggle.addEventListener('click', () => {
+                openSidebarMobile();
+            });
+        }
+
+        if (overlay) {
+            overlay.addEventListener('click', () => {
+                closeSidebarMobile();
+            });
+        }
 
         document.addEventListener('closeSidebar', () => {
-            sidebar.classList.remove('show');
-            overlay.classList.remove('show');
+            closeSidebarMobile();
+        });
+
+        // Reset on resize to ensure body class isn't left behind
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 1330) {
+                sidebar.classList.remove('show');
+                overlay.classList.remove('show');
+                document.body.classList.remove('sidebar-open');
+            }
         });
     })();
 </script>

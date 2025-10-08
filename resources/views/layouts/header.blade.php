@@ -29,25 +29,61 @@
         gap: 1.5rem;
     }
 
-    .mobile-menu-toggle {
+    /* Updated Hamburger Menu Styles - Sharp trigger */
+    .hamburger-menu {
         background: none;
         border: none;
         color: #6c757d;
-        font-size: 1.4rem;
+        font-size: 1.5rem;
         cursor: pointer;
         padding: 0.5rem;
-        border-radius: 8px;
+        border-radius: 6px;
         transition: all 0.2s ease;
-        display: flex;
+        display: none;
         align-items: center;
         justify-content: center;
-        width: 40px;
-        height: 40px;
+        width: 42px;
+        height: 42px;
+        position: relative;
+        z-index: 10;
     }
 
-    .mobile-menu-toggle:hover {
+    .hamburger-menu:hover {
         background: #f8f9fa;
-        color: #495057;
+        color: #047;
+    }
+
+    .hamburger-menu:active {
+        transform: scale(0.95);
+    }
+
+    /* Simple hamburger icon - no animation */
+    .hamburger-icon {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        width: 20px;
+        height: 16px;
+    }
+
+    .hamburger-icon span {
+        display: block;
+        height: 2px;
+        width: 100%;
+        background: currentColor;
+        border-radius: 1px;
+        transition: none; /* Remove any transitions */
+    }
+
+    /* Make the entire button area clickable and responsive */
+    .hamburger-menu::before {
+        content: '';
+        position: absolute;
+        top: -10px;
+        left: -10px;
+        right: -10px;
+        bottom: -10px;
+        z-index: -1;
     }
 
     .header-actions {
@@ -361,6 +397,21 @@
         display: block;
     }
 
+    /* Mobile responsive styles */
+    @media (max-width: 1330px) {
+        .hamburger-menu {
+            display: flex !important;
+        }
+        
+        /* Prevent body scroll when sidebar is open on mobile */
+        body.sidebar-open {
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+        }
+    }
+
     @media (max-width: 768px) {
         .header-content {
             padding: 0 1rem;
@@ -403,8 +454,13 @@
 <header class="header">
     <div class="header-content">
         <div class="header-left">
-            <button class="mobile-menu-toggle d-xl-none" id="mobileMenuToggle">
-                <i class="bi bi-list"></i>
+            <!-- Hamburger Menu Button - Sharp trigger -->
+            <button class="hamburger-menu" id="hamburgerMenu" title="Toggle Sidebar">
+                <div class="hamburger-icon">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
             </button>
             <div class="d-none d-md-block">
                 <h5 class="mb-0 text-dark" id="pageTitle">
@@ -417,63 +473,26 @@
             <div class="header-actions">
                 <!-- Custom Notification Dropdown -->
                 <div class="notification-wrapper">
-                    <button class="notification-toggle" id="notificationToggle">
+                    <button class="notification-toggle" id="notificationToggle" type="button">
                         <i class="bi bi-bell"></i>
-                        <span class="notification-badge">3</span>
+                        <span class="notification-badge" style="display:none">0</span>
                     </button>
 
                     <div class="notification-dropdown" id="notificationDropdown">
                         <div class="notification-header d-flex justify-content-between align-items-center">
                             <h6 class="notification-title">Notifications</h6>
-                            <span class="notification-badge-header">3 new</span>
+                            <span class="notification-badge-header" style="display:none"></span>
                         </div>
 
                         <div class="notification-list">
-                            <div class="notification-item">
-                                <div class="notification-icon primary">
-                                    <i class="bi bi-person-plus"></i>
-                                </div>
-                                <div class="notification-content">
-                                    <p class="notification-message">New subscriber registration from John Doe</p>
-                                    <span class="notification-time">2 minutes ago</span>
-                                </div>
-                            </div>
-
-                            <div class="notification-item">
-                                <div class="notification-icon success">
-                                    <i class="bi bi-credit-card"></i>
-                                </div>
-                                <div class="notification-content">
-                                    <p class="notification-message">Payment received for Professional Plan</p>
-                                    <span class="notification-time">1 hour ago</span>
-                                </div>
-                            </div>
-
-                            <div class="notification-item">
-                                <div class="notification-icon warning">
-                                    <i class="bi bi-exclamation-triangle"></i>
-                                </div>
-                                <div class="notification-content">
-                                    <p class="notification-message">Subscription expiring in 3 days</p>
-                                    <span class="notification-time">5 hours ago</span>
-                                </div>
-                            </div>
-
-                            <div class="notification-item">
-                                <div class="notification-icon primary">
-                                    <i class="bi bi-chat-dots"></i>
-                                </div>
-                                <div class="notification-content">
-                                    <p class="notification-message">New support ticket received</p>
-                                    <span class="notification-time">1 day ago</span>
-                                </div>
-                            </div>
+                            
                         </div>
 
                         <div class="notification-footer">
-                            <button class="view-all-btn">
-                                View All Notifications
-                            </button>
+                            <form method="POST" action="{{ route('notifications.markAllRead') }}" onsubmit="event.preventDefault(); fetch(this.action, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content } }).then(() => document.getElementById('notificationToggle').click());">
+                                @csrf
+                                <button class="view-all-btn" type="submit">Mark all as read</button>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -486,7 +505,7 @@
                         </div>
                         <div class="user-info d-none d-md-flex">
                             <span class="user-name">{{ Auth::user()->name ?? 'User' }}</span>
-                            <span class="user-role">{{ Auth::user()->isAdmin() == 1 ? "Administrator" : "User"}}</span>
+                            <span class="user-role">{{ Auth::user()->is_admin == 1 ? "Administrator" : "User"}}</span>
                         </div>
                         <i class="bi bi-chevron-down"></i>
                     </button>
@@ -525,8 +544,11 @@
 </header>
 
 <script>
-    class HeaderDropdownManager {
+    class HeaderManager {
         constructor() {
+            this.sidebar = document.getElementById('sidebar');
+            this.sidebarOverlay = document.getElementById('sidebarOverlay');
+            this.hamburgerMenu = document.getElementById('hamburgerMenu');
             this.notificationToggle = document.getElementById('notificationToggle');
             this.notificationDropdown = document.getElementById('notificationDropdown');
             this.userDropdownToggle = document.getElementById('userDropdownToggle');
@@ -534,15 +556,28 @@
             this.dropdownOverlay = document.getElementById('dropdownOverlay');
 
             this.activeDropdown = null;
+            this.isSidebarOpen = false;
             this.init();
         }
 
         init() {
             this.bindEvents();
             this.bindOutsideClick();
+            this.checkMobileView();
         }
 
         bindEvents() {
+            // Hamburger menu for sidebar - Sharp click handler
+            this.hamburgerMenu.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Hamburger clicked - opening sidebar');
+                this.toggleSidebar();
+            });
+
+            // Make sure the entire button area is clickable
+            this.hamburgerMenu.style.cursor = 'pointer';
+
             // Notification dropdown
             this.notificationToggle.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -559,6 +594,25 @@
             this.dropdownOverlay.addEventListener('click', () => {
                 this.closeAllDropdowns();
             });
+
+            // Listen for sidebar close events from sidebar itself
+            document.addEventListener('closeSidebar', () => {
+                this.closeSidebar();
+            });
+
+            // Sync state when sidebar is opened/closed by other scripts
+            document.addEventListener('sidebarOpened', () => {
+                this.isSidebarOpen = true;
+            });
+
+            document.addEventListener('sidebarClosed', () => {
+                this.isSidebarOpen = false;
+            });
+
+            // Handle window resize
+            window.addEventListener('resize', () => {
+                this.checkMobileView();
+            });
         }
 
         bindOutsideClick() {
@@ -573,8 +627,54 @@
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') {
                     this.closeAllDropdowns();
+                    if (this.isSidebarOpen) {
+                        this.closeSidebar();
+                    }
                 }
             });
+        }
+
+        toggleSidebar() {
+            if (this.isSidebarOpen) {
+                this.closeSidebar();
+            } else {
+                this.openSidebar();
+            }
+        }
+
+        openSidebar() {
+            if (this.sidebar && this.sidebarOverlay) {
+                this.sidebar.classList.add('show');
+                this.sidebarOverlay.classList.add('show');
+                
+                // Only prevent body scroll on mobile devices
+                if (window.innerWidth <= 1330) {
+                    document.body.classList.add('sidebar-open');
+                }
+                
+                this.isSidebarOpen = true;
+                
+                console.log('Sidebar opened');
+                
+                // Close any open dropdowns when opening sidebar
+                this.closeAllDropdowns();
+            } else {
+                console.error('Sidebar or overlay not found');
+            }
+        }
+
+        closeSidebar() {
+            if (this.sidebar && this.sidebarOverlay) {
+                this.sidebar.classList.remove('show');
+                this.sidebarOverlay.classList.remove('show');
+                
+                // Always remove the sidebar-open class when closing
+                document.body.classList.remove('sidebar-open');
+                
+                this.isSidebarOpen = false;
+                
+                console.log('Sidebar closed');
+            }
         }
 
         toggleDropdown(dropdown) {
@@ -590,11 +690,6 @@
             dropdown.classList.add('show');
             this.dropdownOverlay.classList.add('show');
             this.activeDropdown = dropdown;
-
-            // Add animation class for smooth appearance
-            setTimeout(() => {
-                dropdown.style.transition = 'all 0.3s ease';
-            }, 10);
         }
 
         closeDropdown(dropdown) {
@@ -607,11 +702,18 @@
             this.closeDropdown(this.notificationDropdown);
             this.closeDropdown(this.userDropdown);
         }
+
+        checkMobileView() {
+            // Auto-close sidebar when switching to desktop view
+            if (window.innerWidth > 1330 && this.isSidebarOpen) {
+                this.closeSidebar();
+            }
+        }
     }
 
     // Initialize when DOM is loaded
     document.addEventListener('DOMContentLoaded', () => {
-        new HeaderDropdownManager();
+        const headerManager = new HeaderManager();
 
         // Mark notifications as read when clicked
         const notificationItems = document.querySelectorAll('.notification-item');
@@ -638,7 +740,23 @@
                         headerBadge.style.display = 'none';
                     }
                 }
+
+                // Close dropdown after click
+                headerManager.closeAllDropdowns();
+            });
+        });
+
+        // Close sidebar when clicking on nav links (handled in sidebar script)
+        const navLinks = document.querySelectorAll('.nav-link');
+        navLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth <= 1330) {
+                    headerManager.closeSidebar();
+                }
             });
         });
     });
+
+    // Debug helper
+    console.log('Header manager loaded');
 </script>

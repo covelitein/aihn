@@ -12,8 +12,8 @@ return new class extends Migration {
     {
         Schema::create('subscription_applications', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->foreignId('plan_id')->constrained('subscription_plans');
+            $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('plan_id');
             $table->string('transaction_id')->nullable()->unique();
             $table->decimal('amount_paid', 10, 2);
             $table->string('payment_method')->default('bank_transfer');
@@ -22,6 +22,15 @@ return new class extends Migration {
             $table->text('admin_notes')->nullable();
             $table->text('rejection_reason')->nullable();
             $table->timestamp('submitted_at')->useCurrent();
+
+            $table->foreign('user_id')
+                ->references('id')
+                ->on('users')
+                ->onDelete('cascade');
+                
+            $table->foreign('plan_id')
+                ->references('id')
+                ->on('subscription_plans');
             $table->timestamp('reviewed_at')->nullable();
             $table->timestamp('approved_at')->nullable();
             $table->timestamp('expires_at')->nullable();

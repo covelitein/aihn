@@ -62,11 +62,9 @@
             </a>
 
             @if(in_array($application->status, ['pending', 'under_review']))
-                <form action="{{ route('subscription.cancel', $application) }}" 
-                      method="POST" class="d-inline">
+                <form id="cancel-application-{{ $application->id }}" action="{{ route('subscription.cancel', $application) }}" method="POST" class="d-inline">
                     @csrf
-                    <button type="submit" class="btn btn-sm btn-danger" 
-                            onclick="return confirm('Are you sure you want to cancel this application?')">
+                    <button type="button" class="btn btn-sm btn-danger" onclick="AppUI.confirm('Are you sure you want to cancel this application?', 'Confirm Cancellation').then(function(ok){ if(ok) document.getElementById('cancel-application-{{ $application->id }}').submit(); });">
                         <i class="bi bi-x-circle"></i> Cancel Application
                     </button>
                 </form>

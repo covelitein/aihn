@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Content;
-use App\Models\SubscriptionApplication;
-use App\Models\SubscriptionPlan;
+use App\Models\User;
+use App\Models\MentorRequest;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
@@ -13,48 +13,50 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
 
-        // Determine active subscription and plan
-        $activeSubscription = $user->activeSubscription()->with('plan')->first();
-        $currentPlan = $activeSubscription?->plan;
-        $currentPlanId = $currentPlan?->id;
-        
-        // Get recently added content
+        // Prevent admins from entering the user dashboard
+        if ($user && ($user->is_admin ?? 0) == 1) {
+            return redirect()->route('admin.dashboard.index');
+        }
+
+        // Get recently added content (no plan filtering — access is handled by admin provisioning)
         $recentContent = Content::published()
-            ->when($currentPlanId, function($query) use ($currentPlanId) {
-                $query->forPlan($currentPlanId);
-            })
             ->latest()
             ->take(4)
             ->get();
 
-        // Get subscription application if pending
+        // Content stats: show overall counts
+        $contentStats = Content::published()
+            ->selectRaw('type, count(*) as count')
+            ->groupBy('type')
+            ->get()
+            ->pluck('count', 'type')
+            ->toArray();
+
+        // Subscription-related variables intentionally removed
         $pendingApplication = null;
-        if (!$user->is_subscription_active) {
-            $pendingApplication = SubscriptionApplication::where('user_id', $user->id)
-                ->whereIn('status', ['pending', 'under_review'])
-                ->latest()
-                ->first();
-        }
-
-        // Get available plans if no active subscription
         $availablePlans = null;
-        if (!$user->is_subscription_active && !$pendingApplication) {
-            $availablePlans = SubscriptionPlan::active()
-                ->orderBy('price')
-                ->take(3)
-                ->get();
-        }
+        $currentPlan = null;
 
-        // Get content statistics by type
-        $contentStats = [];
-        if ($user->is_subscription_active && $currentPlanId) {
-            $contentStats = Content::published()
-                ->forPlan($currentPlanId)
-                ->selectRaw('type, count(*) as count')
-                ->groupBy('type')
-                ->get()
-                ->pluck('count', 'type')
-                ->toArray();
+        // Mentors directory and requests
+        $mentors = User::where('is_mentor', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'email']);
+
+        $pendingMentorIds = MentorRequest::where('user_id', $user->id)
+            ->where('status', 'pending')
+            ->pluck('mentor_id')
+            ->toArray();
+
+        $pendingRequestsForMentor = [];
+        $mentees = collect();
+        if ($user->is_mentor) {
+            $pendingRequestsForMentor = MentorRequest::with('user')
+                ->where('mentor_id', $user->id)
+                ->where('status', 'pending')
+                ->latest()
+                ->take(10)
+                ->get();
+            $mentees = $user->mentees()->latest()->take(10)->get();
         }
 
         return view('dashboard', compact(
@@ -62,7 +64,11 @@ class DashboardController extends Controller
             'pendingApplication',
             'availablePlans',
             'contentStats',
-            'currentPlan'
+            'currentPlan',
+            'mentors',
+            'pendingMentorIds',
+            'pendingRequestsForMentor',
+            'mentees'
         ));
     }
 }

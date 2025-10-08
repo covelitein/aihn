@@ -1,11 +1,14 @@
 <?php
 
 namespace App\Http\Controllers;
+
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 // use App\Models\SubscriptionApplication;
 // use Illuminate\Support\Facades\View;
 
 abstract class Controller
 {
+    use AuthorizesRequests;
     // public function boot()
     // {
         // Share pending applications count with all views

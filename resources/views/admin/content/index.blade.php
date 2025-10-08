@@ -8,60 +8,38 @@
                     <p class="text-muted mb-0">Manage and organize your content across different plans</p>
                 </div>
 
-                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-                    <!-- Filters -->
-                    <div class="filter-section">
-                        <form id="contentFilters" class="d-flex flex-wrap gap-2 align-items-end">
-                            <div class="filter-group">
-                                <label class="form-label small text-muted mb-1">Search</label>
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text bg-light border-end-0">
-                                        <i class="bi bi-search text-muted"></i>
-                                    </span>
-                                    <input type="text" id="searchInput" class="form-control border-start-0"
-                                        placeholder="Search content...">
-                                </div>
-                            </div>
-
-                            <div class="filter-group">
-                                <label class="form-label small text-muted mb-1">Content Type</label>
-                                <select id="typeFilter" class="form-select form-select-sm">
-                                    <option value="">All Types</option>
-                                    @foreach($contentTypes as $value => $label)
-                                        <option value="{{ $value }}">{{ $label }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <div class="filter-group">
-                                <label class="form-label small text-muted mb-1">Plan</label>
-                                <select id="planFilter" class="form-select form-select-sm">
-                                    <option value="">All Plans</option>
-                                    @foreach($plans as $plan)
-                                        <option value="{{ $plan->id }}">{{ $plan->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <div class="filter-group">
-                                <label class="form-label small text-muted mb-1">Status</label>
-                                <select id="publishedFilter" class="form-select form-select-sm">
-                                    <option value="">All Status</option>
-                                    <option value="yes">Published</option>
-                                    <option value="no">Draft</option>
-                                </select>
-                            </div>
-
-                            <div class="filter-group">
-                                <button type="button" id="applyFilters" class="btn btn-primary btn-sm">
-                                    <i class="bi bi-funnel me-1"></i> Apply
-                                </button>
-                            </div>
-                        </form>
+                <!-- Unified toolbar -->
+                <div class="filter-toolbar d-flex flex-wrap gap-2 align-items-center">
+                    <div class="input-group input-group-sm toolbar-search">
+                        <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                        <input type="text" id="searchInput" class="form-control" placeholder="Search content...">
                     </div>
 
-                    <!-- Create Button -->
-                    <a href="{{ route('admin.content.create') }}" class="btn btn-success btn-sm">
+                    <select id="typeFilter" class="form-select form-select-sm toolbar-select">
+                        <option value="">All Types</option>
+                        @foreach($contentTypes as $value => $label)
+                            <option value="{{ $value }}">{{ $label }}</option>
+                        @endforeach
+                    </select>
+
+                    <select id="planFilter" class="form-select form-select-sm toolbar-select">
+                        <option value="">All Plans</option>
+                        @foreach($plans as $plan)
+                            <option value="{{ $plan->id }}">{{ $plan->name }}</option>
+                        @endforeach
+                    </select>
+
+                    <select id="publishedFilter" class="form-select form-select-sm toolbar-select">
+                        <option value="">All Status</option>
+                        <option value="yes">Published</option>
+                        <option value="no">Draft</option>
+                    </select>
+
+                    <button type="button" id="applyFilters" class="btn btn-primary btn-sm">
+                        <i class="bi bi-funnel me-1"></i> Apply
+                    </button>
+
+                    <a href="{{ route('admin.content.create') }}" class="btn btn-success btn-sm ms-auto">
                         <i class="bi bi-plus-circle me-1"></i> Create Content
                     </a>
                 </div>
@@ -110,6 +88,17 @@
             flex-direction: column;
         }
 
+        /* Compact filter controls column */
+        .filter-controls {
+            gap: 0.5rem;
+            align-items: flex-end; /* right-align compact controls */
+        }
+
+        .filter-compact {
+            width: 220px; /* compact width for select boxes */
+            max-width: 100%;
+        }
+
         .filter-group .form-label {
             font-size: 0.75rem;
             font-weight: 500;
@@ -148,8 +137,10 @@
 
         .table {
             margin-bottom: 0;
-            table-layout: fixed;
+            /* allow table to determine column widths so it can expand naturally */
+            table-layout: auto;
             width: 100%;
+            border-collapse: separate;
         }
 
         .table thead th {
@@ -159,6 +150,11 @@
             color: #495057;
             padding: 1rem 0.75rem;
             background-color: #f8f9fa;
+            /* allow header text to wrap or expand; don't truncate here */
+            white-space: normal;
+            text-overflow: initial;
+            overflow: visible;
+            vertical-align: middle;
         }
 
         .table thead th:nth-child(1) {
@@ -207,6 +203,16 @@
             vertical-align: middle;
             border-bottom: 1px solid #f1f3f4;
             font-size: 0.875rem;
+            /* allow cells to expand; rely on .table-responsive to scroll horizontally */
+            white-space: normal;
+            overflow: visible;
+            text-overflow: initial;
+        }
+
+        /* Ensure header and body use the same box sizing so columns line up */
+        .table thead th,
+        .table tbody td {
+            box-sizing: border-box;
         }
 
         /* Title truncation */
@@ -289,6 +295,14 @@
                 gap: 1rem;
             }
 
+            .filter-controls {
+                align-items: stretch; /* on mobile, stretch to full width */
+            }
+
+            .filter-compact {
+                width: 100%;
+            }
+
             .table-responsive {
                 font-size: 0.8rem;
             }
@@ -345,13 +359,22 @@
             border-color: var(--primary-color) !important;
         }
 
-        /* Ensure no horizontal scroll */
-        .table-responsive {
-            overflow-x: hidden;
+        /* Hide default DataTables sort icons (sorting arrows) for cleaner header UI */
+        table.dataTable thead .sorting:after,
+        table.dataTable thead .sorting_asc:after,
+        table.dataTable thead .sorting_desc:after,
+        table.dataTable thead .sorting:before,
+        table.dataTable thead .sorting_asc:before,
+        table.dataTable thead .sorting_desc:before {
+            display: none !important;
+            content: none !important;
         }
 
-        body {
-            overflow-x: hidden;
+        /* Allow horizontal scroll on narrow screens for complex tables */
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            max-width: 100%;
         }
     </style>
 
@@ -448,6 +471,7 @@
                         }
                     ],
                     order: [[1, 'asc']],
+                    ordering: false,
                     pageLength: 10,
                     lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
                     language: {

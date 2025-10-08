@@ -76,11 +76,9 @@
             @endif
 
             @if($application->status === 'pending')
-                <form action="{{ route('subscription.cancel', $application) }}" 
-                      method="POST"
-                      onsubmit="return confirm('Are you sure you want to cancel this application?')">
+                <form id="cancel-application-{{ $application->id }}" action="{{ route('subscription.cancel', $application) }}" method="POST">
                     @csrf
-                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="AppUI.confirm('Are you sure you want to cancel this application?', 'Confirm Cancellation').then(function(ok){ if(ok) document.getElementById('cancel-application-{{ $application->id }}').submit(); });">
                         <i class="bi bi-x-circle me-1"></i>
                         Cancel Application
                     </button>

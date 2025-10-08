@@ -62,9 +62,7 @@
             <!-- Register -->
             <div class="text-center mt-4">
                 <span class="text-muted">Don’t have an account?</span>
-                <a href="{{ route('register') }}" class="fw-semibold text-decoration-none">
-                    {{ __('Register') }}
-                </a>
+                    <!-- Registration disabled: users must be added by an administrator -->
             </div>
         </div>
     </div>

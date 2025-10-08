@@ -19,21 +19,9 @@ class ContentController extends Controller
                 $q->where('type', $request->type);
             });
 
-        if (auth()->check() && auth()->user()->is_subscription_active) {
-            $activePlanId = auth()->user()->activeSubscription()->value('plan_id');
-
-            if ($activePlanId) {
-                $query->forPlan($activePlanId);
-            } else {
-                // Debug: log why no plan ID was found
-                \Log::warning('User has active subscription but no plan_id', [
-                    'user_id' => auth()->id(),
-                    'subscription' => auth()->user()->activeSubscription
-                ]);
-                $query->whereRaw('1 = 0');
-            }
-        } else {
-            $query->whereRaw('1 = 0');
+        // Unified access: all authenticated users can access published content
+        if (! auth()->check()) {
+            return redirect()->route('login');
         }
 
         $content = $query->latest()->paginate(12);
@@ -44,11 +32,9 @@ class ContentController extends Controller
 
     public function show(Content $content)
     {
-        // Check if user can access the content
-        if (!auth()->check() || !$content->isAccessibleByUser(auth()->user())) {
-            return redirect()
-                ->route('subscription.plans')
-                ->with('error', 'Please subscribe to access this content.');
+        // Require authentication; unified access allows authenticated users to view published content
+        if (! auth()->check()) {
+            return redirect()->route('login')->with('error', 'Please log in to access this content.');
         }
 
         $content->incrementViews();
@@ -58,14 +44,11 @@ class ContentController extends Controller
 
     public function download(Content $content)
     {
-        // Check if user can access the content
-        if (!auth()->check() || !$content->isAccessibleByUser(auth()->user())) {
-            return redirect()
-                ->route('subscription.plans')
-                ->with('error', 'Please subscribe to access this content.');
+        if (! auth()->check()) {
+            return redirect()->route('login')->with('error', 'Please log in to download this content.');
         }
 
-        if (!$content->file_path) {
+        if (! $content->file_path) {
             abort(404);
         }
 
@@ -78,14 +61,12 @@ class ContentController extends Controller
 
     public function stream(Content $content)
     {
-        // Check if user can access the content
-        if (!auth()->check() || !$content->isAccessibleByUser(auth()->user())) {
-            return redirect()
-                ->route('subscription.plans')
-                ->with('error', 'Please subscribe to access this content.');
+
+        if (! auth()->check()) {
+            return redirect()->route('login')->with('error', 'Please log in to stream this content.');
         }
 
-        if (!$content->file_path || !in_array($content->type, ['video', 'audio'])) {
+        if (! $content->file_path || ! in_array($content->type, ['video', 'audio'])) {
             abort(404);
         }
 

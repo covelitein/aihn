@@ -4,6 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', config('app.name', 'Laravel'))</title>
 
     <!-- Fonts -->
@@ -34,15 +35,13 @@
 
         .main-content {
             flex: 1;
-            margin-left: var(--sidebar-width);
             transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-        }
-
-        .main-content.expanded {
-            margin-left: var(--sidebar-collapsed-width);
+            box-sizing: border-box;
+            width: 100%;
+            margin-left: var(--sidebar-width);
         }
 
         .main-content.full-width {
@@ -157,7 +156,7 @@
 
         @media (max-width: 768px) {
             .content-area {
-                padding: 1.5rem 1rem;
+                padding: 1.5rem 0.2rem;
             }
 
             .preloader-spinner {
@@ -210,6 +209,33 @@
                     {{ $slot ?? '' }}
                 @endif
             </main>
+        </div>
+    </div>
+
+    <!-- Global Toast Container -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1080">
+        <div id="globalToast" class="toast align-items-center text-bg-dark border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body" id="globalToastBody"></div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Global Confirm Modal -->
+    <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmModalTitle">Please Confirm</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="confirmModalMessage">Are you sure?</div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmModalOk">Yes, continue</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -329,6 +355,66 @@
                 }
             });
         }
+
+        // AppUI helpers (toast + confirm) - wait for Bootstrap to be available
+        (function initAppUIWhenReady() {
+            function init() {
+                const toastEl = document.getElementById('globalToast');
+                const toastBody = document.getElementById('globalToastBody');
+                let toast;
+                if (toastEl && window.bootstrap?.Toast) {
+                    toast = window.bootstrap.Toast.getOrCreateInstance(toastEl, { delay: 3000 });
+                }
+
+                function showToast(message, variant = 'dark') {
+                    if (!toastEl || !toastBody || !toast) return;
+                    toastEl.className = `toast align-items-center text-bg-${variant} border-0`;
+                    toastBody.textContent = message;
+                    toast.show();
+                }
+
+                function confirm(message, title = 'Please Confirm') {
+                    return new Promise((resolve) => {
+                        const modalEl = document.getElementById('confirmModal');
+                        const okBtn = document.getElementById('confirmModalOk');
+                        const titleEl = document.getElementById('confirmModalTitle');
+                        const msgEl = document.getElementById('confirmModalMessage');
+                        if (!modalEl || !okBtn || !titleEl || !msgEl || !window.bootstrap?.Modal) return resolve(false);
+
+                        titleEl.textContent = title;
+                        msgEl.textContent = message;
+                        const modal = window.bootstrap.Modal.getOrCreateInstance(modalEl);
+
+                        function cleanup(result) {
+                            okBtn.removeEventListener('click', onOk);
+                            modalEl.removeEventListener('hidden.bs.modal', onCancel);
+                            resolve(result);
+                        }
+
+                        function onOk() {
+                            modal.hide();
+                            cleanup(true);
+                        }
+
+                        function onCancel() {
+                            cleanup(false);
+                        }
+
+                        okBtn.addEventListener('click', onOk, { once: true });
+                        modalEl.addEventListener('hidden.bs.modal', onCancel, { once: true });
+                        modal.show();
+                    });
+                }
+
+                window.AppUI = { showToast, confirm };
+            }
+
+            if (window.bootstrap) {
+                init();
+            } else {
+                document.addEventListener('bootstrap:ready', init, { once: true });
+            }
+        })();
     </script>
 
     <!-- Stack for additional scripts -->

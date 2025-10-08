@@ -100,7 +100,7 @@
                                         <i class="bi bi-eye me-1"></i>View
                                     </a>
 
-                                    @if(auth()->check() && auth()->user()->is_subscription_active)
+                                    @if(auth()->check())
                                         @if(in_array($item->type, ['video', 'audio']))
                                             <a href="{{ route('content.stream', $item) }}" class="btn btn-outline-primary btn-sm"
                                                 title="Stream">
@@ -113,9 +113,9 @@
                                             </a>
                                         @endif
                                     @else
-                                        <span class="btn btn-outline-secondary btn-sm disabled" title="Subscribe to access">
+                                        <a href="{{ route('login') }}" class="btn btn-outline-secondary btn-sm" title="Log in to access">
                                             <i class="bi bi-lock"></i>
-                                        </span>
+                                        </a>
                                     @endif
                                 </div>
                             </div>

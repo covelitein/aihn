@@ -54,7 +54,7 @@
                                     <form action="{{ route('admin.subscription.plans.destroy', $plan) }}" 
                                           method="POST"
                                           class="dropdown-item-form"
-                                          onsubmit="return confirm('Are you sure you want to delete this plan?')">
+                                          onsubmit="return AppUI.confirm('Are you sure you want to delete this plan?', 'Confirm Deletion')">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="dropdown-item text-danger">

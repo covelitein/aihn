@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\SubscriptionApplication;
-use App\Models\SubscriptionPlan;
+// Subscription models removed
 use App\Models\User;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller implements HasMiddleware
 {
@@ -21,63 +21,37 @@ class DashboardController extends Controller implements HasMiddleware
 
 	public function index()
 	{
+        $authUser = Auth::user();
 		$totalUsers = User::count();
 		$newUsersThisMonth = User::where('created_at', '>=', now()->startOfMonth())->count();
 
-		$activeSubscriptions = User::where('is_subscribed', true)
-			->where('subscription_status', 'active')
-			->where('subscription_expires_at', '>', now())
-			->count();
+		// Subscription statistics removed; provide safe placeholders
+		$activeSubscriptions = 0;
+		$pendingApplications = 0;
+		$monthlyRevenue = 0.0;
+		$revenueGrowth = 0.0;
+		$subscriptionRate = 0.0;
+		$planDistribution = collect();
+		$recentSubscriptions = collect();
 
-		$pendingApplications = SubscriptionApplication::whereIn('status', ['pending', 'under_review'])->count();
+        $recentUsers = User::latest()->take(10)->get();
 
-		$approvedThisMonth = SubscriptionApplication::where('status', 'approved')
-			->where('approved_at', '>=', now()->startOfMonth())
-			->get(['amount_paid']);
-		$monthlyRevenue = (float) $approvedThisMonth->sum('amount_paid');
+        // If the admin is also a mentor, load their mentees via accepted mentor_requests mapping
+        $mentees = collect();
+        if ($authUser && $authUser->is_mentor) {
+            $mentees = User::whereIn('id', \App\Models\MentorRequest::where('mentor_id', $authUser->id)
+                    ->where('status', 'accepted')
+                    ->pluck('user_id'))
+                ->latest()
+                ->take(10)
+                ->get(['id','name','email','created_at']);
+        }
 
-		$lastMonthRevenue = (float) SubscriptionApplication::where('status', 'approved')
-			->whereBetween('approved_at', [now()->subMonth()->startOfMonth(), now()->subMonth()->endOfMonth()])
-			->sum('amount_paid');
-		$revenueGrowth = $monthlyRevenue - $lastMonthRevenue;
-
-		$subscriptionRate = $totalUsers > 0 ? ($activeSubscriptions / $totalUsers) * 100 : 0.0;
-
-		$plans = SubscriptionPlan::orderBy('price')->get();
-		$planDistribution = $plans->map(function ($plan) use ($activeSubscriptions) {
-			$activeCount = User::where('current_subscription_id', function ($q) use ($plan) {
-				$q->select('id')
-					->from('subscription_applications')
-					->whereColumn('subscription_applications.id', 'users.current_subscription_id')
-					->where('plan_id', $plan->id)
-					->limit(1);
-			})->count();
-
-			$monthlyRevenue = SubscriptionApplication::where('status', 'approved')
-				->where('plan_id', $plan->id)
-				->where('approved_at', '>=', now()->startOfMonth())
-				->sum('amount_paid');
-
-			$percentage = $activeSubscriptions > 0 ? ($activeCount / $activeSubscriptions) * 100 : 0.0;
-			$plan->active_subscribers_count = $activeCount;
-			$plan->monthly_revenue = (float) $monthlyRevenue;
-			$plan->percentage = (float) $percentage;
-			$plan->color = null;
-			return $plan;
-		});
-
-		$recentSubscriptions = SubscriptionApplication::with(['user', 'plan'])
-			->whereIn('status', ['approved', 'under_review', 'pending'])
-			->latest()
-			->take(10)
-			->get();
-
-		$recentUsers = User::latest()->take(10)->get();
-
-		$averageSubscriptionValue = SubscriptionApplication::where('status', 'approved')->avg('amount_paid') ?: 0.0;
-		$averageSubscriptionDuration = 30; // Placeholder unless you track per-plan duration days elsewhere
-		$renewalRate = 0.0; // Not tracked explicitly; set safe default
-		$churnRate = 0.0;   // Not tracked explicitly; set safe default
+	// Subscription metrics removed; set safe defaults
+	$averageSubscriptionValue = 0.0;
+	$averageSubscriptionDuration = 0;
+	$renewalRate = 0.0;
+	$churnRate = 0.0;
 
 		return view('admin.dashboard.index', compact(
 			'totalUsers',
@@ -89,7 +63,8 @@ class DashboardController extends Controller implements HasMiddleware
 			'subscriptionRate',
 			'planDistribution',
 			'recentSubscriptions',
-			'recentUsers',
+            'recentUsers',
+            'mentees',
 			'averageSubscriptionValue',
 			'averageSubscriptionDuration',
 			'renewalRate',

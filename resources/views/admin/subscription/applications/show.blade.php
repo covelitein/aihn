@@ -218,7 +218,7 @@
                     <p>Delete this application permanently. This action cannot be undone.</p>
                     <form action="{{ route('admin.subscriptions.destroy', $application) }}" 
                           method="POST"
-                          onsubmit="return confirm('Are you sure you want to delete this application? This action cannot be undone.')">
+                          onsubmit="return AppUI.confirm('Are you sure you want to delete this application? This action cannot be undone.', 'Confirm Deletion')">
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="btn btn-danger">

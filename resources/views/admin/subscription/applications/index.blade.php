@@ -229,7 +229,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (selectedIds.length === 0) {
             e.preventDefault();
-            alert('Please select at least one application.');
+            if (window.AppUI) {
+                window.AppUI.showToast('Please select at least one application.', 'warning');
+            }
             return;
         }
 

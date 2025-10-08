@@ -86,42 +86,42 @@
 
                     <!-- Actions -->
                     <div class="d-grid gap-2">
-                        @if(!$subscriber->is_subscribed)
-                            <form action="{{ route('admin.subscribers.update-subscription', $subscriber) }}" method="POST">
-                                @csrf
-                                @method('PUT')
-                                <input type="hidden" name="action" value="activate">
-                                <button type="submit" class="btn btn-success w-100">
-                                    <i class="bi bi-check-circle me-1"></i> Activate Subscription
-                                </button>
-                            </form>
-                        @else
-                            <form action="{{ route('admin.subscribers.update-subscription', $subscriber) }}" method="POST">
-                                @csrf
-                                @method('PUT')
-                                <input type="hidden" name="action" value="deactivate">
-                                <button type="submit" class="btn btn-warning w-100">
-                                    <i class="bi bi-pause-circle me-1"></i> Deactivate Subscription
-                                </button>
-                            </form>
-                        @endif
-
-                        <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#extendModal">
-                            <i class="bi bi-calendar-plus me-1"></i> Extend Subscription
-                        </button>
-
-                        <form action="{{ route('admin.subscribers.destroy', $subscriber) }}" 
-                              method="POST"
-                              onsubmit="return confirm('Are you sure you want to delete this subscriber?')">
+                        <!-- Subscription management moved to admin settings; simple delete action kept -->
+                        <form id="delete-subscriber-{{ $subscriber->id }}" action="{{ route('admin.subscribers.destroy', $subscriber) }}" method="POST">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="btn btn-danger w-100">
+                            <button type="button" class="btn btn-danger w-100" onclick="AppUI.confirm('Are you sure you want to delete this subscriber?', 'Confirm Deletion').then(function(ok){ if(ok) document.getElementById('delete-subscriber-{{ $subscriber->id }}').submit(); });">
                                 <i class="bi bi-trash me-1"></i> Delete Subscriber
                             </button>
                         </form>
                     </div>
                 </div>
             </div>
+
+            @can('superadmin')
+                <!-- Mentor Assignment -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">Mentor</h5>
+                    </div>
+                    <div class="card-body">
+                        <form action="{{ route('admin.subscribers.assign-mentor', $subscriber) }}" method="POST" class="row g-2 align-items-end">
+                            @csrf
+                            <div class="col-md-8">
+                                <label class="form-label">Assign Mentor</label>
+                                <select name="mentor_id" class="form-select">
+                                    @foreach($mentors as $mentor)
+                                        <option value="{{ $mentor->id }}">{{ $mentor->name }} ({{ $mentor->email }})</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <button class="btn btn-primary w-100">Save</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            @endcan
 
             <!-- Notes -->
             @if($subscriber->profile && $subscriber->profile->notes)
@@ -136,137 +136,19 @@
             @endif
         </div>
 
-        <!-- Subscription History -->
+            <!-- Subscription sections removed; subscription/application management moved to admin workflows -->
         <div class="col-lg-8">
-            <!-- Current Plan -->
-            @if($subscriber->currentSubscription)
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-white">
-                        <h5 class="mb-0">Current Plan</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row align-items-center">
-                            <div class="col-md-4">
-                                <h6>{{ $subscriber->currentSubscription->plan->name }}</h6>
-                                <p class="text-muted mb-0">
-                                    ${{ number_format($subscriber->currentSubscription->plan->price, 2) }} / 
-                                    {{ $subscriber->currentSubscription->plan->duration }}
-                                </p>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="text-muted small">Start Date</div>
-                                <strong>{{ $subscriber->currentSubscription->approved_at->format('M d, Y') }}</strong>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="text-muted small">Expiry Date</div>
-                                <strong>{{ $subscriber->subscription_expires_at->format('M d, Y') }}</strong>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            @endif
-
-            <!-- Applications History -->
-            <div class="card shadow-sm">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Subscription History</h5>
-                    <a href="{{ route('admin.subscriptions.index') }}" class="btn btn-outline-secondary btn-sm">
-                        <i class="bi bi-arrow-left me-1"></i> Back to Applications
-                    </a>
-                </div>
+            <div class="card shadow-sm mb-4">
                 <div class="card-body">
-                    <div class="timeline">
-                        @forelse($subscriber->subscriptionApplications->sortByDesc('created_at') as $application)
-                            <div class="timeline-item">
-                                <div class="timeline-badge bg-{{ $application->status_color }}">
-                                    <i class="bi bi-circle-fill"></i>
-                                </div>
-                                <div class="timeline-content">
-                                    <div class="d-flex justify-content-between align-items-center mb-1">
-                                        <h6 class="mb-0">{{ $application->plan->name }}</h6>
-                                        <span class="badge bg-{{ $application->status_color }}">
-                                            {{ ucfirst($application->status) }}
-                                        </span>
-                                    </div>
-                                    <p class="text-muted mb-2">
-                                        Amount: ${{ number_format($application->amount_paid, 2) }}
-                                        @if($application->transaction_id)
-                                            <br>Transaction ID: {{ $application->transaction_id }}
-                                        @endif
-                                    </p>
-                                    <div class="small text-muted">
-                                        <i class="bi bi-clock me-1"></i>
-                                        Submitted {{ $application->created_at->format('M d, Y h:i A') }}
-
-                                        @if($application->approved_at)
-                                            <br>
-                                            <i class="bi bi-check-circle me-1"></i>
-                                            Approved {{ $application->approved_at->format('M d, Y h:i A') }}
-                                        @endif
-
-                                        @if($application->rejection_reason)
-                                            <div class="text-danger mt-1">
-                                                <i class="bi bi-x-circle me-1"></i>
-                                                {{ $application->rejection_reason }}
-                                            </div>
-                                        @endif
-                                    </div>
-                                </div>
-                            </div>
-                        @empty
-                            <p class="text-muted text-center py-4 mb-0">
-                                No subscription history available
-                            </p>
-                        @endforelse
-                    </div>
+                    <h5 class="mb-0">Access & Activity</h5>
+                    <p class="text-muted">Subscription plans and applications have been removed from the user interface. Manage user access via admin settings or contact support.</p>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Extend Subscription Modal -->
-<div class="modal fade" id="extendModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form action="{{ route('admin.subscribers.update-subscription', $subscriber) }}" method="POST">
-                @csrf
-                @method('PUT')
-                <input type="hidden" name="action" value="extend">
-                
-                <div class="modal-header">
-                    <h5 class="modal-title">Extend Subscription</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="extension_days" class="form-label">Extension Period (Days)</label>
-                        <input type="number" 
-                               class="form-control" 
-                               name="extension_days" 
-                               min="1" 
-                               max="365" 
-                               value="30" 
-                               required>
-                        <div class="form-text">
-                            Enter the number of days to extend the subscription (1-365 days)
-                        </div>
-                    </div>
-
-                    @if($subscriber->subscription_expires_at)
-                        <p class="text-muted">
-                            Current expiry: {{ $subscriber->subscription_expires_at->format('M d, Y') }}
-                        </p>
-                    @endif
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Extend Subscription</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+<!-- subscription extension modal removed -->
 
 @push('styles')
 <style>

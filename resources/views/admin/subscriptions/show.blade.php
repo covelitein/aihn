@@ -85,11 +85,11 @@
                                 @endif
 
                                 @if(in_array($application->status, ['pending', 'under_review']))
-                                    <form action="{{ route('admin.subscriptions.update-status', $application) }}" method="POST" class="d-inline">
+                                    <form id="approve-application-{{ $application->id }}" action="{{ route('admin.subscriptions.update-status', $application) }}" method="POST" class="d-inline">
                                         @csrf
                                         @method('PUT')
                                         <input type="hidden" name="status" value="approved">
-                                        <button type="submit" class="btn btn-success" onclick="return confirm('Are you sure you want to approve this application?')">
+                                        <button type="button" class="btn btn-success" onclick="AppUI.confirm('Are you sure you want to approve this application?', 'Confirm Approval').then(function(ok){ if(ok) document.getElementById('approve-application-{{ $application->id }}').submit(); });">
                                             <i class="bi bi-check-circle me-1"></i> Approve
                                         </button>
                                     </form>

@@ -32,14 +32,12 @@ class Content extends Model
         'file_size',
         'metadata',
         'author_id',
-        'accessible_plans',
         'is_published',
         'published_at'
     ];
 
     protected $casts = [
         'metadata' => 'array',
-        'accessible_plans' => 'array',
         'is_published' => 'boolean',
         'published_at' => 'datetime',
         'created_at' => 'datetime',
@@ -59,14 +57,7 @@ class Content extends Model
             ->whereNotNull('published_at');
     }
 
-    public function scopeForPlan($query, $planId)
-    {
-        // Handle both string and integer plan IDs
-        return $query->where(function ($q) use ($planId) {
-            $q->whereJsonContains('accessible_plans', (string) $planId)
-                ->orWhereJsonContains('accessible_plans', (int) $planId);
-        });
-    }
+    // Plan-scoped access removed; content is universally accessible to authenticated users
 
     public function scopeSearch($query, $search)
     {
@@ -77,27 +68,10 @@ class Content extends Model
     }
 
     // Methods
-    public function isAccessibleByPlan($planId)
-    {
-        return in_array($planId, $this->accessible_plans ?? []);
-    }
-
     public function isAccessibleByUser(User $user)
     {
-        if ($user->is_admin || $user->id === $this->author_id) {
-            return true;
-        }
-
-        if (!$user->is_subscription_active) {
-            return false;
-        }
-
-        $activePlanId = $user->activeSubscription()->value('plan_id');
-        if (!$activePlanId) {
-            return false;
-        }
-
-        return $this->isAccessibleByPlan($activePlanId);
+        // Any authenticated user can access published content
+        return (bool) $user?->id;
     }
 
     public function incrementViews()

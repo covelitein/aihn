@@ -1,0 +1,39 @@
+// Custom styles
+@import "@fontsource/nunito-sans/400.css"; // Regular
+@import "@fontsource/nunito-sans/600.css"; // Semi-bold
+@import "@fontsource/nunito-sans/700.css"; // Bold
+
+// Import Bootstrap
+@import 'bootstrap/scss/bootstrap';
+
+body {
+  font-family: 'Nunito Sans', sans-serif;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Global admin table tweaks */
+/* Hide DataTables sort arrows/pseudo-elements (sorting not used in this app) */
+table.dataTable thead .sorting:after,
+table.dataTable thead .sorting_asc:after,
+table.dataTable thead .sorting_desc:after,
+table.dataTable thead .sorting:before,
+table.dataTable thead .sorting_asc:before,
+table.dataTable thead .sorting_desc:before {
+  display: none !important;
+  content: none !important;
+}
+
+/* Allow horizontal scroll on narrow screens for tables */
+.table-responsive {
+  overflow-x: auto;
+}
+
+/* Responsive tweaks for admin tables: hide less important columns on very small screens */
+@media (max-width: 540px) {
+  .table-responsive table td:nth-child(3),
+  .table-responsive table th:nth-child(3) {
+    display: none;
+  }
+}

@@ -3,19 +3,25 @@
         <!-- Header Section -->
         <div class="row mb-4">
             <div class="col-12">
-                <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <div>
-                        <h3 class="fw-bold mb-1 text-dark">Admin Dashboard</h3>
+                        <h3 class="fw-bold mb-1 text-dark">Admin Overview</h3>
                         <p class="text-muted mb-0">Welcome back, {{ Auth::user()->name }}</p>
                     </div>
-                    <div class="text-end">
-                        <small class="text-muted">Last updated: {{ now()->format('M j, Y g:i A') }}</small>
+                    <div class="d-flex gap-2">
+                        <a href="{{ route('admin.content.create') }}" class="btn btn-success">
+                            <i class="bi bi-plus-circle me-1"></i> Create Content
+                        </a>
+                        <a href="{{ route('admin.subscribers.index') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-people me-1"></i> Subscribers
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Key Metrics -->
+        <!-- Key Metrics (focused) -->
+        @if(!Auth::user()->is_mentor || Auth::user()->is_super_admin)
         <div class="row mb-4">
             <div class="col-xl-3 col-md-6 mb-4">
                 <div class="card metric-card bg-primary text-white">
@@ -24,10 +30,7 @@
                             <div>
                                 <h6 class="card-title text-white-50 mb-2">Total Users</h6>
                                 <h2 class="fw-bold mb-0">{{ $totalUsers }}</h2>
-                                <small class="text-white-75">
-                                    <i class="bi bi-arrow-up"></i>
-                                    {{ $newUsersThisMonth }} this month
-                                </small>
+                                <small class="text-white-75">+{{ $newUsersThisMonth }} this month</small>
                             </div>
                             <div class="metric-icon">
                                 <i class="bi bi-people-fill"></i>
@@ -38,39 +41,16 @@
             </div>
 
             <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card metric-card bg-success text-white">
+                <div class="card metric-card bg-secondary text-white">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
-                                <h6 class="card-title text-white-50 mb-2">Active Subscriptions</h6>
-                                <h2 class="fw-bold mb-0">{{ $activeSubscriptions }}</h2>
-                                <small class="text-white-75">
-                                    {{ number_format($subscriptionRate, 1) }}% conversion
-                                </small>
+                                <h6 class="card-title text-white-50 mb-2">Active Users</h6>
+                                <h2 class="fw-bold mb-0">{{ $activeUsers ?? $totalUsers }}</h2>
+                                <small class="text-white-75">Currently active</small>
                             </div>
                             <div class="metric-icon">
-                                <i class="bi bi-check-circle-fill"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-xl-3 col-md-6 mb-4">
-                <div class="card metric-card bg-warning text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div>
-                                <h6 class="card-title text-white-50 mb-2">Pending Applications</h6>
-                                <h2 class="fw-bold mb-0">{{ $pendingApplications }}</h2>
-                                <small class="text-white-75">
-                                    <a href="{{ route('admin.subscriptions.index') }}" class="text-white text-decoration-underline">
-                                        Review now
-                                    </a>
-                                </small>
-                            </div>
-                            <div class="metric-icon">
-                                <i class="bi bi-clock-fill"></i>
+                                <i class="bi bi-people-fill"></i>
                             </div>
                         </div>
                     </div>
@@ -84,10 +64,7 @@
                             <div>
                                 <h6 class="card-title text-white-50 mb-2">Monthly Revenue</h6>
                                 <h2 class="fw-bold mb-0">₱{{ number_format($monthlyRevenue, 2) }}</h2>
-                                <small class="text-white-75">
-                                    <i class="bi bi-arrow-up"></i>
-                                    ₱{{ number_format($revenueGrowth, 2) }} growth
-                                </small>
+                                <small class="text-white-75">+₱{{ number_format($revenueGrowth, 2) }} vs last month</small>
                             </div>
                             <div class="metric-icon">
                                 <i class="bi bi-currency-dollar"></i>
@@ -97,61 +74,45 @@
                 </div>
             </div>
         </div>
+        @endif
 
         <!-- Main Content Area -->
         <div class="row">
-            <!-- Plan Distribution & Quick Actions -->
+            <!-- At a glance (hide for mentors unless super admin) -->
+            @if(!Auth::user()->is_mentor || Auth::user()->is_super_admin)
             <div class="col-lg-8 mb-4">
                 <div class="card h-100">
                     <div class="card-header bg-transparent border-bottom-0 pb-3">
-                        <h5 class="card-title mb-0 fw-semibold">Plan Distribution</h5>
+                        <h5 class="card-title mb-0 fw-semibold">At a glance</h5>
                     </div>
                     <div class="card-body pt-0">
-                        @if($planDistribution->isNotEmpty())
-                            <div class="table-responsive">
-                                <table class="table table-hover align-middle">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Plan</th>
-                                            <th class="text-center">Subscribers</th>
-                                            <th class="text-end">Revenue</th>
-                                            <th class="text-end">Share</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach($planDistribution as $plan)
-                                            <tr>
-                                                <td>
-                                                    <span class="badge bg-primary bg-opacity-10 text-primary border-0 py-2 px-3">
-                                                        {{ $plan->name }}
-                                                    </span>
-                                                </td>
-                                                <td class="text-center fw-semibold">{{ $plan->active_subscribers_count }}</td>
-                                                <td class="text-end fw-semibold text-success">₱{{ number_format($plan->monthly_revenue, 2) }}</td>
-                                                <td class="text-end">
-                                                    <div class="d-flex align-items-center justify-content-end gap-2">
-                                                        <div class="progress flex-grow-1" style="height: 6px; max-width: 80px;">
-                                                            <div class="progress-bar" style="width: {{ $plan->percentage }}%"></div>
-                                                        </div>
-                                                        <small class="text-muted fw-semibold">{{ number_format($plan->percentage, 1) }}%</small>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <div class="p-3 rounded border bg-light">
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <span class="text-muted">New Users (30d)</span>
+                                        <i class="bi bi-person-plus"></i>
+                                    </div>
+                                    <div class="h4 mb-0">{{ $newUsersThisMonth }}</div>
+                                </div>
                             </div>
-                        @else
-                            <div class="text-center py-5">
-                                <i class="bi bi-graph-up text-muted display-4 mb-3"></i>
-                                <p class="text-muted">No subscription data available</p>
+                            <div class="col-sm-6">
+                                <div class="p-3 rounded border bg-light">
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <span class="text-muted">Active Subscriptions</span>
+                                        <i class="bi bi-receipt"></i>
+                                    </div>
+                                    <div class="h4 mb-0">{{ $activeSubscriptions ?? 0 }}</div>
+                                </div>
                             </div>
-                        @endif
+                        </div>
                     </div>
                 </div>
             </div>
+            @endif
 
-            <!-- Quick Actions -->
+            <!-- Quick Actions (hide for mentors unless super admin) -->
+            @if(!Auth::user()->is_mentor || Auth::user()->is_super_admin)
             <div class="col-lg-4 mb-4">
                 <div class="card h-100">
                     <div class="card-header bg-transparent border-bottom-0 pb-3">
@@ -159,27 +120,10 @@
                     </div>
                     <div class="card-body pt-0">
                         <div class="d-grid gap-3">
-                            <a href="{{ route('admin.subscriptions.index') }}" 
-                               class="btn btn-outline-primary btn-lg text-start p-3 d-flex align-items-center justify-content-between">
-                                <div>
-                                    <i class="bi bi-clipboard-data me-3"></i>
-                                    <span>Manage Applications</span>
-                                </div>
-                                @if($pendingApplications > 0)
-                                    <span class="badge bg-danger rounded-pill">{{ $pendingApplications }}</span>
-                                @endif
-                            </a>
-                            
                             <a href="{{ route('admin.subscribers.index') }}" 
                                class="btn btn-outline-success btn-lg text-start p-3">
                                 <i class="bi bi-people me-3"></i>
                                 Manage Subscribers
-                            </a>
-                            
-                            <a href="{{ route('admin.subscription.plans.index') }}" 
-                               class="btn btn-outline-info btn-lg text-start p-3">
-                                <i class="bi bi-tags me-3"></i>
-                                Manage Plans
                             </a>
 
                             <a href="{{ route('admin.content.index') }}" 
@@ -191,23 +135,70 @@
                     </div>
                 </div>
             </div>
+            @endif
         </div>
 
         <!-- Recent Activity -->
         <div class="row">
-            <!-- Recent Subscriptions -->
+            <!-- Recent Subscriptions / Mentor Requests (mentor view) -->
             <div class="col-lg-6 mb-4">
                 <div class="card h-100">
                     <div class="card-header bg-transparent border-bottom-0 pb-3">
                         <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="card-title mb-0 fw-semibold">Recent Subscriptions</h5>
-                            <a href="{{ route('admin.subscriptions.index') }}" class="btn btn-sm btn-outline-primary">
-                                View All
-                            </a>
+                            <h5 class="card-title mb-0 fw-semibold">
+                                @if(Auth::user()->is_mentor)
+                                    Mentor Requests
+                                @else
+                                    Recent Subscriptions
+                                @endif
+                            </h5>
+                            @if(!Auth::user()->is_mentor && (Auth::user()->is_super_admin))
+                                <a href="{{ route('admin.subscriptions.index') }}" class="btn btn-sm btn-outline-primary">View All</a>
+                            @endif
                         </div>
                     </div>
                     <div class="card-body pt-0">
-                        @if($recentSubscriptions->isNotEmpty())
+                        @if(Auth::user()->is_mentor)
+                            @php($requests = \App\Models\MentorRequest::where('mentor_id', Auth::id())->latest()->take(10)->get())
+                            @if($requests->isNotEmpty())
+                                <div class="list-group list-group-flush">
+                                    @foreach($requests as $req)
+                                        <div class="list-group-item px-0 py-3 border-0">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar-sm bg-light rounded-circle d-flex align-items-center justify-content-center me-3">
+                                                        <i class="bi bi-person text-muted"></i>
+                                                    </div>
+                                                    <div>
+                                                        <h6 class="mb-1 fw-semibold">{{ $req->user->name }}</h6>
+                                                        <small class="text-muted">Requested {{ $req->created_at->diffForHumans() }}</small>
+                                                    </div>
+                                                </div>
+                                                <div class="d-flex gap-2">
+                                                    @if($req->status === 'pending')
+                                                        <form method="POST" action="{{ route('mentor-requests.accept', $req) }}">
+                                                            @csrf
+                                                            <button class="btn btn-sm btn-success">Accept</button>
+                                                        </form>
+                                                        <form method="POST" action="{{ route('mentor-requests.reject', $req) }}">
+                                                            @csrf
+                                                            <button class="btn btn-sm btn-outline-secondary">Reject</button>
+                                                        </form>
+                                                    @else
+                                                        <span class="badge bg-{{ $req->status === 'accepted' ? 'success' : 'secondary' }}">{{ $req->status === 'accepted' ? 'Assigned' : 'Rejected' }}</span>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <div class="text-center py-4">
+                                    <i class="bi bi-inbox text-muted display-4 mb-3"></i>
+                                    <p class="text-muted">No mentor requests</p>
+                                </div>
+                            @endif
+                        @elseif($recentSubscriptions->isNotEmpty())
                             <div class="list-group list-group-flush">
                                 @foreach($recentSubscriptions as $subscription)
                                     <div class="list-group-item px-0 py-3 border-0">
@@ -240,17 +231,48 @@
                 </div>
             </div>
 
-            <!-- Recent Users -->
+            <!-- Recent Users / Mentees -->
             <div class="col-lg-6 mb-4">
-                <div class="card h-100">
-                    <div class="card-header bg-transparent border-bottom-0 pb-3">
-                        <h5 class="card-title mb-0 fw-semibold">Recent Users</h5>
+                <div class="card h-100 w-100 overflow-y-hidden">
+                    <div class="card-header bg-transparent border-bottom-0 pb-3 pt-3">
+                        <h5 class="card-title mb-0 fw-semibold">
+                            @if(Auth::user()->is_mentor)
+                                My Mentees
+                            @else
+                                Recent Users
+                            @endif
+                        </h5>
                     </div>
                     <div class="card-body pt-0">
-                        @if($recentUsers->isNotEmpty())
+                        @if(Auth::user()->is_mentor)
+                            @if($mentees->isNotEmpty())
+                                <div class="list-group list-group-flush">
+                                    @foreach($mentees as $user)
+                                        <div class="list-group-item px-0 pe-2 py-3 border-0">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar-sm bg-light rounded-circle d-flex align-items-center justify-content-center me-3">
+                                                        <i class="bi bi-person-badge text-muted"></i>
+                                                    </div>
+                                                    <div>
+                                                        <h6 class="mb-1 fw-semibold">{{ $user->name }}</h6>
+                                                        <small class="text-muted">{{ $user->email }} • Assigned {{ $user->created_at->diffForHumans() }}</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <div class="text-center py-4">
+                                    <i class="bi bi-people text-muted display-4 mb-3"></i>
+                                    <p class="text-muted">No mentees assigned yet</p>
+                                </div>
+                            @endif
+                        @elseif($recentUsers->isNotEmpty())
                             <div class="list-group list-group-flush">
                                 @foreach($recentUsers as $user)
-                                    <div class="list-group-item px-0 py-3 border-0">
+                                    <div class="list-group-item px-0 pe-2 py-3 border-0">
                                         <div class="d-flex justify-content-between align-items-center">
                                             <div class="d-flex align-items-center">
                                                 <div class="avatar-sm bg-light rounded-circle d-flex align-items-center justify-content-center me-3">
@@ -263,7 +285,7 @@
                                                     </small>
                                                 </div>
                                             </div>
-                                            <span class="badge bg-{{ $user->is_subscription_active ? 'success' : 'secondary' }} bg-opacity-10 text-{{ $user->is_subscription_active ? 'success' : 'secondary' }} border-0 py-2">
+                                            <span class="badge mx-2 bg-{{ $user->is_subscription_active ? 'success' : 'secondary' }} bg-opacity-10 text-{{ $user->is_subscription_active ? 'success' : 'secondary' }} border-0 py-2">
                                                 {{ $user->is_subscription_active ? 'Active' : 'No Sub' }}
                                             </span>
                                         </div>

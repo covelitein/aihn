@@ -106,25 +106,36 @@
                         </form>
                     </div>
                     <div class="col-md-4 text-md-end mt-2 mt-md-0">
-                        <span class="text-muted small">
-                            Showing {{ $subscribers->firstItem() ?? 0 }}-{{ $subscribers->lastItem() ?? 0 }} of
-                            {{ $subscribers->total() }} subscribers
-                        </span>
+                        <div class="d-flex justify-content-end align-items-center gap-2">
+                            @can('superadmin')
+                                <a href="{{ route('admin.subscribers.create') }}" class="btn btn-sm btn-success">
+                                    <i class="bi bi-plus-circle me-1"></i> Add User
+                                </a>
+                            @endcan
+                            @can('superadmin')
+                                <a href="{{ route('admin.subscribers.create', ['role' => 'mentor']) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-person-badge me-1"></i> Add Mentor
+                                </a>
+                            @endcan
+                            <span class="text-muted small">
+                                Showing {{ $subscribers->firstItem() ?? 0 }}-{{ $subscribers->lastItem() ?? 0 }} of
+                                {{ $subscribers->total() }} subscribers
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <div class="card-body p-0">
-                <div class="table-responsive">
+                <div class="table-responsive text-nowrap">
                     <table class="table table-hover mb-0">
                         <thead class="table-light">
                             <tr>
                                 <th class="ps-4">Subscriber</th>
                                 <th>Email</th>
                                 <th>Company</th>
-                                <th>Plan</th>
-                                <th>Status</th>
-                                <th>Expiry Date</th>
+                                <th>Renewal</th>
+                                <th>Mentor</th>
                                 <th class="text-end pe-4">Actions</th>
                             </tr>
                         </thead>
@@ -143,6 +154,7 @@
                                         <div class="text-truncate" style="max-width: 200px;" title="{{ $subscriber->email }}">
                                             {{ $subscriber->email }}
                                         </div>
+                                        <div class="text-muted small">{{ $subscriber->phone ?? '—' }}</div>
                                     </td>
                                     <td>
                                         <span class="text-muted">
@@ -150,44 +162,28 @@
                                         </span>
                                     </td>
                                     <td>
-                                        @if($subscriber->currentSubscription)
-                                            <span class="badge bg-light text-dark border">
-                                                {{ $subscriber->currentSubscription->plan->name }}
-                                            </span>
-                                        @else
-                                            <span class="text-muted small">No active plan</span>
-                                        @endif
+                                        <span class="text-muted">
+                                            {{ optional($subscriber->renewal_date)->format('M d, Y') ?? '—' }}
+                                        </span>
                                     </td>
                                     <td>
-                                        @if($subscriber->is_subscribed)
-                                            <span class="badge bg-success bg-opacity-10 text-success border-0">
-                                                <i class="bi bi-check-circle me-1"></i>Active
-                                            </span>
-                                        @elseif($subscriber->hasPendingApplication())
-                                            <span class="badge bg-warning bg-opacity-10 text-warning border-0">
-                                                <i class="bi bi-clock me-1"></i>Pending
-                                            </span>
-                                        @else
-                                            <span class="badge bg-danger bg-opacity-10 text-danger border-0">
-                                                <i class="bi bi-x-circle me-1"></i>Expired
-                                            </span>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @if($subscriber->subscription_expires_at)
-                                            <span
-                                                class="{{ $subscriber->subscription_expires_at->isPast() ? 'text-danger' : 'text-success' }} fw-medium">
-                                                {{ $subscriber->subscription_expires_at->format('M d, Y') }}
-                                            </span>
-                                            @if($subscriber->subscription_expires_at->isPast())
-                                                <div class="text-danger small">Expired</div>
-                                            @else
-                                                <div class="text-muted small">
-                                                    {{ $subscriber->subscription_expires_at->diffForHumans() }}</div>
-                                            @endif
-                                        @else
-                                            <span class="text-muted">N/A</span>
-                                        @endif
+                                        @can('superadmin')
+                                            <form action="{{ route('admin.subscribers.assign-mentor', $subscriber) }}" method="POST" class="d-flex align-items-center gap-2">
+                                                @csrf
+                                                <select name="mentor_id" class="form-select form-select-sm" style="min-width: 180px;">
+                                                    <option value="">— None —</option>
+                                                    @foreach(($mentors ?? collect()) as $mentor)
+                                                        <option value="{{ $mentor->id }}" {{ (($mentorAssignments[$subscriber->id] ?? null) == $mentor->id) ? 'selected' : '' }}>
+                                                            {{ $mentor->name }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                                <button class="btn btn-sm btn-outline-primary">Save</button>
+                                            </form>
+                                        @endcan
+                                        @cannot('superadmin')
+                                            <span class="text-muted small">—</span>
+                                        @endcannot
                                     </td>
                                     <td class="text-end pe-4">
                                         <div class="btn-group btn-group-sm" role="group">
@@ -195,61 +191,31 @@
                                                 class="btn btn-outline-primary" title="View Details">
                                                 <i class="bi bi-eye"></i>
                                             </a>
-                                            <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal"
-                                                data-bs-target="#extendModal{{ $subscriber->id }}" title="Extend Subscription">
-                                                <i class="bi bi-calendar-plus"></i>
-                                            </button>
-                                            <form action="{{ route('admin.subscribers.destroy', $subscriber) }}" method="POST"
-                                                class="d-inline">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-outline-danger"
-                                                    onclick="return confirm('Are you sure you want to delete {{ $subscriber->name }}?')"
-                                                    title="Delete Subscriber">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
-                                            </form>
+                                            
+                                            @can('superadmin')
+                                                <form action="{{ route('admin.subscribers.update-renewal', $subscriber) }}" method="POST" class="d-inline">
+                                                    @csrf
+                                                    <input type="date" name="renewal_date" value="{{ optional($subscriber->renewal_date)->format('Y-m-d') }}" class="form-control form-control-sm d-inline" style="width: 150px;">
+                                                    <button type="submit" class="btn btn-outline-success" title="Save Renewal">
+                                                        <i class="bi bi-calendar-check"></i>
+                                                    </button>
+                                                </form>
+                                            @endcan
+                                            <!-- Subscription extension removed; manage access via admin settings -->
+                                            @can('superadmin')
+                                                <form id="delete-subscriber-{{ $subscriber->id }}" action="{{ route('admin.subscribers.destroy', $subscriber) }}" method="POST" class="d-inline">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="button" class="btn btn-outline-danger" title="Delete Subscriber" onclick="AppUI.confirm('Delete user {{ addslashes($subscriber->name) }}?', 'Confirm Deletion').then(function(ok){ if(ok) document.getElementById('delete-subscriber-{{ $subscriber->id }}').submit(); });">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            @endcan
                                         </div>
                                     </td>
                                 </tr>
 
-                                <!-- Extend Subscription Modal -->
-                                <div class="modal fade" id="extendModal{{ $subscriber->id }}" tabindex="-1">
-                                    <div class="modal-dialog modal-sm">
-                                        <div class="modal-content">
-                                            <form action="{{ route('admin.subscribers.update-subscription', $subscriber) }}"
-                                                method="POST">
-                                                @csrf
-                                                @method('PUT')
-                                                <input type="hidden" name="action" value="extend">
-
-                                                <div class="modal-header">
-                                                    <h6 class="modal-title fw-semibold">Extend Subscription</h6>
-                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                                </div>
-                                                <div class="modal-body">
-                                                    <div class="mb-3">
-                                                        <label for="extension_days"
-                                                            class="form-label small fw-semibold">Extension Period (Days)</label>
-                                                        <input type="number" class="form-control form-control-sm"
-                                                            name="extension_days" min="1" max="365" value="30" required>
-                                                    </div>
-                                                    @if($subscriber->subscription_expires_at)
-                                                        <div class="alert alert-light py-2 small">
-                                                            <strong>Current expiry:</strong><br>
-                                                            {{ $subscriber->subscription_expires_at->format('M d, Y') }}
-                                                        </div>
-                                                    @endif
-                                                </div>
-                                                <div class="modal-footer">
-                                                    <button type="button" class="btn btn-sm btn-outline-secondary"
-                                                        data-bs-dismiss="modal">Cancel</button>
-                                                    <button type="submit" class="btn btn-sm btn-primary">Extend</button>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
+                                <!-- subscription extension UI removed -->
                             @empty
                                 <tr>
                                     <td colspan="7" class="text-center py-5">

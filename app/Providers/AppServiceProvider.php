@@ -21,12 +21,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Register Blade Components
-        Blade::component('subscription.application-card', \App\View\Components\Subscription\ApplicationCard::class);
+    // Subscription Blade components removed (subscription flow archived)
 
-        // Authorization Gate for admin
+        // Authorization Gates
         Gate::define('admin', function ($user) {
-            return (bool) ($user?->is_admin);
+            return (bool) ($user?->is_admin) || (bool) ($user?->is_super_admin);
+        });
+
+        Gate::define('superadmin', function ($user) {
+            return (bool) ($user?->is_super_admin);
         });
     }
 }

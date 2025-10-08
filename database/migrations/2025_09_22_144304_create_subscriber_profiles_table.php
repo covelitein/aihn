@@ -12,7 +12,7 @@ return new class extends Migration {
     {
         Schema::create('subscriber_profiles', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->unsignedBigInteger('user_id');
             $table->string('company_name')->nullable();
             $table->string('phone')->nullable();
             $table->text('address')->nullable();
@@ -26,6 +26,11 @@ return new class extends Migration {
             $table->timestamps();
 
             $table->unique('user_id');
+            
+            $table->foreign('user_id')
+                ->references('id')
+                ->on('users')
+                ->onDelete('cascade');
         });
     }
 

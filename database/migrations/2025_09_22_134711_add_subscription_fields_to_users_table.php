@@ -14,9 +14,14 @@ return new class extends Migration {
             $table->timestamp('subscription_expires_at')->nullable();
             $table->boolean('is_subscribed')->default(false);
             $table->enum('subscription_status', ['active', 'expired', 'cancelled', 'pending'])->default('pending');
-            $table->foreignId('current_subscription_id')->nullable()->constrained('subscription_applications');
+            $table->unsignedBigInteger('current_subscription_id')->nullable();
             $table->timestamp('last_subscription_at')->nullable();
             $table->integer('total_subscriptions')->default(0);
+
+            $table->foreign('current_subscription_id')
+                ->references('id')
+                ->on('subscription_applications')
+                ->onDelete('set null');
         });
     }
 

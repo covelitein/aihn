@@ -62,12 +62,10 @@
                                     data-bs-target="#editPlanModal{{ $plan->id }}">
                                 <i class="bi bi-pencil me-1"></i> Edit Plan
                             </button>
-                            <form action="{{ route('admin.plans.destroy', $plan) }}" 
-                                  method="POST"
-                                  onsubmit="return confirm('Are you sure you want to delete this plan?')">
+                            <form id="delete-plan-{{ $plan->id }}" action="{{ route('admin.plans.destroy', $plan) }}" method="POST">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="btn btn-outline-danger w-100">
+                                <button type="button" class="btn btn-outline-danger w-100" onclick="AppUI.confirm('Are you sure you want to delete this plan?', 'Confirm Deletion').then(function(ok){ if(ok) document.getElementById('delete-plan-{{ $plan->id }}').submit(); });">
                                     <i class="bi bi-trash me-1"></i> Delete
                                 </button>
                             </form>
@@ -191,10 +189,20 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Display validation errors
+    // Display validation errors (wait for Bootstrap availability)
     @if($errors->any())
-        const modal = new bootstrap.Modal(document.getElementById('{{ old('plan_id') ? 'editPlanModal' . old('plan_id') : 'createPlanModal' }}'));
-        modal.show();
+        const targetId = '{{ old('plan_id') ? 'editPlanModal' . old('plan_id') : 'createPlanModal' }}';
+        function openErrorModal() {
+            const el = document.getElementById(targetId);
+            if (!el || !window.bootstrap?.Modal) return;
+            const modal = window.bootstrap.Modal.getOrCreateInstance(el);
+            modal.show();
+        }
+        if (window.bootstrap?.Modal) {
+            openErrorModal();
+        } else {
+            document.addEventListener('bootstrap:ready', openErrorModal, { once: true });
+        }
     @endif
 });
 </script>

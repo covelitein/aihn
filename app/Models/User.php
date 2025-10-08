@@ -6,11 +6,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Notifications\HasDatabaseNotifications;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasDatabaseNotifications;
 
     /**
      * The attributes that are mass assignable.
@@ -20,14 +21,12 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'phone',
         'password',
         'is_admin',
-        'subscription_expires_at',
-        'is_subscribed',
-        'subscription_status',
-        'current_subscription_id',
-        'last_subscription_at',
-        'total_subscriptions'
+        'is_super_admin',
+        'is_mentor',
+        'renewal_date'
     ];
 
     /**
@@ -50,12 +49,12 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'subscription_expires_at' => 'datetime',
-            'last_subscription_at' => 'datetime',
-            'is_subscribed' => 'boolean',
+            'renewal_date' => 'datetime',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
-            'is_admin' => 'boolean'
+            'is_admin' => 'boolean',
+            'is_super_admin' => 'boolean',
+            'is_mentor' => 'boolean'
         ];
     }
 
@@ -64,75 +63,16 @@ class User extends Authenticatable
         return $this->is_admin === true;
     }
 
-    public function subscriptionApplications()
+    public function isSuperAdmin(): bool
     {
-        return $this->hasMany(SubscriptionApplication::class);
-    }
-
-    public function currentSubscription()
-    {
-        return $this->belongsTo(SubscriptionApplication::class, 'current_subscription_id');
+        return $this->is_super_admin === true;
     }
 
     public function profile()
     {
         return $this->hasOne(SubscriberProfile::class);
     }
-
-    public function activeSubscription()
-    {
-        return $this->hasOne(SubscriptionApplication::class, 'id', 'current_subscription_id')
-            ->where('status', 'approved')
-            ->where('expires_at', '>', now());
-    }
-
-    // Scopes
-    public function scopeSubscribed($query)
-    {
-        return $query->where('is_subscribed', true)
-            ->where('subscription_status', 'active')
-            ->where('subscription_expires_at', '>', now());
-    }
-
-    public function scopeExpired($query)
-    {
-        return $query->where(function ($q) {
-            $q->where('subscription_status', 'expired')
-                ->orWhere('subscription_expires_at', '<=', now());
-        });
-    }
-
-    public function scopePending($query)
-    {
-        return $query->where('subscription_status', 'pending');
-    }
-
-    public function getIsSubscriptionActiveAttribute()
-    {
-        return $this->is_subscribed &&
-            $this->subscription_status === 'active' &&
-            $this->subscription_expires_at &&
-            $this->subscription_expires_at->isFuture();
-    }
-
-    public function getSubscriptionDaysLeftAttribute()
-    {
-        if (!$this->subscription_expires_at || !$this->is_subscription_active) {
-            return 0;
-        }
-
-        return now()->diffInDays($this->subscription_expires_at);
-    }
-
-    public function canAccessPremiumContent()
-    {
-        return $this->is_subscription_active;
-    }
-
-    public function hasPendingApplication()
-    {
-        return $this->subscriptionApplications()
-            ->whereIn('status', ['pending', 'under_review'])
-            ->exists();
-    }
+    
+    // Mentorship relationships moved to pivot (mentor_requests) or admin UI
+    
 }

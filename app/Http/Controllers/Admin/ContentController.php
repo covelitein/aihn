@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Content;
-use App\Models\SubscriptionPlan;
+// SubscriptionPlan model removed
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
@@ -64,25 +64,21 @@ class ContentController extends Controller implements HasMiddleware
 					return $c->created_at?->format('M d, Y') ?? '';
 				})
 				->addColumn('actions', function (Content $c) {
-					return '
-					<div class="btn-group">
-						<a href="'.route('admin.content.edit', $c).'" class="btn btn-sm btn-outline-primary" title="Edit"><i class="bi bi-pencil"></i></a>
-						<form action="'.route('admin.content.toggle-publish', $c).'" method="POST" class="d-inline">'
-							.csrf_field().'
-							<button type="submit" class="btn btn-sm btn-outline-secondary" title="Toggle Publish"><i class="bi bi-eye'.($c->is_published?'-slash':'').'"></i></button>
-						</form>
-						<form action="'.route('admin.content.destroy', $c).'" method="POST" class="d-inline" onsubmit="return confirm(\'Delete this content?\')">'
-							.csrf_field().method_field('DELETE').'
-							<button type="submit" class="btn btn-sm btn-outline-danger" title="Delete"><i class="bi bi-trash"></i></button>
-						</form>
-					</div>';
+					$formId = 'delete-content-' . $c->id;
+					$confirmMessage = addslashes('Delete this content?');
+					return '<div class="btn-group">'
+						.'<a href="'.route('admin.content.edit', $c).'" class="btn btn-sm btn-outline-primary" title="Edit"><i class="bi bi-pencil"></i></a>'
+						.'<form action="'.route('admin.content.toggle-publish', $c).'" method="POST" class="d-inline">'.csrf_field().'<button type="submit" class="btn btn-sm btn-outline-secondary" title="Toggle Publish"><i class="bi bi-eye'.($c->is_published?'-slash':'').'"></i></button></form>'
+						.'<form id="'.$formId.'" action="'.route('admin.content.destroy', $c).'" method="POST" class="d-inline">'.csrf_field().method_field('DELETE').'<button type="button" onclick="AppUI.confirm(\''.$confirmMessage.'\').then(function(ok){ if(ok) document.getElementById(\''.$formId.'\').submit(); });" class="btn btn-sm btn-outline-danger" title="Delete"><i class="bi bi-trash"></i></button></form>'
+					.'</div>';
 				})
 				->rawColumns(['plans', 'published_badge', 'actions'])
 				->make(true);
 		}
 
-		$content = $query->latest()->paginate(20);
-		$plans = SubscriptionPlan::active()->get();
+	$content = $query->latest()->paginate(20);
+	// Plans removed; keep accessible_plans as raw IDs if present
+	$plans = collect();
 		$contentTypes = Content::TYPES;
 
 		return view('admin.content.index', compact('content', 'plans', 'contentTypes'));
@@ -90,7 +86,7 @@ class ContentController extends Controller implements HasMiddleware
 
 	public function create()
 	{
-		$plans = SubscriptionPlan::active()->get();
+	$plans = collect();
 		$contentTypes = Content::TYPES;
 
 		return view('admin.content.form', compact('plans', 'contentTypes'));
@@ -115,7 +111,7 @@ class ContentController extends Controller implements HasMiddleware
 
 	public function edit(Content $content)
 	{
-		$plans = SubscriptionPlan::active()->get();
+	$plans = collect();
 		$contentTypes = Content::TYPES;
 
 		return view('admin.content.form', compact('content', 'plans', 'contentTypes'));
@@ -163,29 +159,7 @@ class ContentController extends Controller implements HasMiddleware
 			->with('success', $message);
 	}
 
-	public function attachToPlan(Request $request, Content $content, SubscriptionPlan $plan)
-	{
-		// Ensure unique and existing arrays
-		$plans = array_unique(array_filter((array) ($content->accessible_plans ?? [])));
-		if (!in_array($plan->id, $plans)) {
-			$plans[] = $plan->id;
-		}
-		$content->accessible_plans = $plans;
-		$content->save();
-
-		return back()->with('success', 'Content attached to plan.');
-	}
-
-	public function detachFromPlan(Request $request, Content $content, SubscriptionPlan $plan)
-	{
-		$plans = array_filter((array) ($content->accessible_plans ?? []), function ($id) use ($plan) {
-			return (int) $id !== (int) $plan->id;
-		});
-		$content->accessible_plans = array_values($plans);
-		$content->save();
-
-		return back()->with('success', 'Content detached from plan.');
-	}
+	// attachToPlan/detachFromPlan removed - plan management is admin-provisioned elsewhere
 
 	protected function validateContent(Request $request, Content $content = null)
 	{
@@ -199,8 +173,9 @@ class ContentController extends Controller implements HasMiddleware
 				'file',
 				'max:52428800' // 50MB max
 			],
-			'accessible_plans' => 'required|array|min:1',
-			'accessible_plans.*' => 'exists:subscription_plans,id',
+			// accessible_plans are optional free-form IDs now
+			'accessible_plans' => 'nullable|array',
+			'accessible_plans.*' => 'integer',
 			'metadata' => 'nullable|array'
 		];
 

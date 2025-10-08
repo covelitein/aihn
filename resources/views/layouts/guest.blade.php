@@ -15,10 +15,7 @@
     <!-- Scripts -->
     @vite([
         'resources/css/app.scss',
-        'resources/js/app.js',
-        'resources/assets/vendor/scss/core.scss',
-        'resources/assets/vendor/css/demo.css',
-        'resources/assets/vendor/js/core.js',
+        'resources/js/app.js'
     ])
 </head>
 
