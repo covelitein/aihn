@@ -10,26 +10,19 @@
 
                 <!-- Unified toolbar -->
                 <div class="filter-toolbar d-flex flex-wrap gap-2 align-items-center">
-                    <div class="input-group input-group-sm toolbar-search">
+                    <div class="input-group input-group toolbar-search">
                         <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
                         <input type="text" id="searchInput" class="form-control" placeholder="Search content...">
                     </div>
 
-                    <select id="typeFilter" class="form-select form-select-sm toolbar-select">
+                    <select id="typeFilter" class="form-select form-select toolbar-select">
                         <option value="">All Types</option>
                         @foreach($contentTypes as $value => $label)
                             <option value="{{ $value }}">{{ $label }}</option>
                         @endforeach
                     </select>
 
-                    <select id="planFilter" class="form-select form-select-sm toolbar-select">
-                        <option value="">All Plans</option>
-                        @foreach($plans as $plan)
-                            <option value="{{ $plan->id }}">{{ $plan->name }}</option>
-                        @endforeach
-                    </select>
-
-                    <select id="publishedFilter" class="form-select form-select-sm toolbar-select">
+                    <select id="publishedFilter" class="form-select form-select toolbar-select">
                         <option value="">All Status</option>
                         <option value="yes">Published</option>
                         <option value="no">Draft</option>
@@ -389,7 +382,6 @@
                         data: function (d) {
                             d.search = document.getElementById('searchInput').value;
                             d.type = document.getElementById('typeFilter').value;
-                            d.plan_id = document.getElementById('planFilter').value;
                             d.published = document.getElementById('publishedFilter').value;
                         }
                     },
@@ -493,9 +485,7 @@
                     table.ajax.reload();
                 });
 
-                document.getElementById('planFilter').addEventListener('change', function () {
-                    table.ajax.reload();
-                });
+                // planFilter removed
 
                 document.getElementById('publishedFilter').addEventListener('change', function () {
                     table.ajax.reload();

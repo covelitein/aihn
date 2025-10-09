@@ -126,16 +126,20 @@ document.addEventListener('DOMContentLoaded', () => {
 document.addEventListener('submit', (e) => {
     const form = e.target;
     if (!(form instanceof HTMLFormElement)) return;
-    const buttons = form.querySelectorAll('button, input[type=submit]');
-    buttons.forEach((btn) => {
+    // Prefer the submitter (clicked button) if available
+    const submitter = (e && typeof e === 'object' && 'submitter' in e) ? (e).submitter : form.querySelector('button[type=submit], input[type=submit]');
+    const allButtons = form.querySelectorAll('button, input[type=submit]');
+    allButtons.forEach((btn) => {
         btn.setAttribute('disabled', 'disabled');
-        if (btn.dataset && !btn.dataset.originalText) {
-            btn.dataset.originalText = btn.innerHTML;
-        }
-        if (btn.innerHTML && !btn.classList.contains('no-loading')) {
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>' + (btn.dataset.loadingText || 'Processing...');
-        }
     });
+    if (submitter && submitter instanceof HTMLElement) {
+        if (submitter.dataset && !submitter.dataset.originalText) {
+            submitter.dataset.originalText = submitter.innerHTML;
+        }
+        if (submitter.innerHTML && !submitter.classList.contains('no-loading')) {
+            submitter.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>' + (submitter.dataset.loadingText || 'Processing...');
+        }
+    }
 }, true);
 
 function bindRemoteDeleteButtons() {

@@ -22,7 +22,7 @@ class AdminUserController extends Controller implements HasMiddleware
 
     public function index()
     {
-        $admins = User::where('is_admin', true)->orderBy('name')->paginate(25);
+        $admins = User::where('is_admin', true)->where('is_super_admin', false)->orderBy('name')->paginate(25);
         return view('admin.admins.index', compact('admins'));
     }
 

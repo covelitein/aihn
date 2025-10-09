@@ -23,7 +23,12 @@
                             @forelse($mentors as $mentor)
                                 <tr>
                                     <td>{{ $mentor->name }}</td>
-                                    <td>{{ $mentor->email }}</td>
+                                    <td>
+                                        {{ $mentor->email }}
+                                        <span style="display: block; font-size: 0.9rem; color: #6c757d;">
+                                            {{ $mentor->phone }}
+                                        </span>
+                                    </td>
                                     <td class="text-end">
                                         @if(auth()->user()->mentor_id === $mentor->id)
                                             <span class="badge bg-success">Your mentor</span>

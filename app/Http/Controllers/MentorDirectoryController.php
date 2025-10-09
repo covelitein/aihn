@@ -15,7 +15,7 @@ class MentorDirectoryController extends Controller
 
         $mentors = User::where('is_mentor', true)
             ->orderBy('name')
-            ->get(['id', 'name', 'email']);
+            ->get(['id', 'name', 'email', 'phone']);
 
         $pendingMentorIds = \App\Models\MentorRequest::where('user_id', auth()->id())
             ->where('status', 'pending')
