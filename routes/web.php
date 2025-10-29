@@ -1,5 +1,20 @@
 <?php
 
+/**
+ * -------------------------------------------------------------
+ * Project: AIHN Platform
+ * -------------------------------------------------------------
+ * Description:
+ * This file was collaboratively developed as part of the AIHN
+ * platform modules. It demonstrates teamwork and shared logic.
+ *
+ * Authors:
+ *  - John Nwanosike <johnnwanosike@gmail.com>
+ *  - Abraham Covenant <abrahamcovenant2004@gmail.com>
+ * -------------------------------------------------------------
+ */
+
+
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\SubscriberController;
@@ -34,7 +49,6 @@ Route::middleware('auth')->group(function () {
 Route::post('/_heartbeat', function () {
     return response('', 204);
 })->middleware('auth')->name('heartbeat');
-
 
 
 // Subscription-related public routes removed/redirected: platform uses admin-provisioned access.

@@ -1,4 +1,19 @@
+
+
 <?php
+/**
+ * -------------------------------------------------------------
+ * Project: AIHN Platform
+ * -------------------------------------------------------------
+ * Description:
+ * This file was collaboratively developed as part of the AIHN
+ * platform modules. It demonstrates teamwork and shared logic.
+ *
+ * Authors:
+ *  - John Nwanosike <johnnwanosike@gmail.com>
+ *  - Abraham Covenant <abrahamcovenant2004@gmail.com>
+ * -------------------------------------------------------------
+ */
 
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\ConfirmablePasswordController;
