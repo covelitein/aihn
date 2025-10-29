@@ -20,7 +20,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($mentors as $mentor)
+                            @forelse($mentorsArray as $mentor)
                                 <tr>
                                     <td>{{ $mentor->name }}</td>
                                     <td>
@@ -32,7 +32,7 @@
                                     <td class="text-end">
                                         @if(auth()->user()->mentor_id === $mentor->id)
                                             <span class="badge bg-success">Your mentor</span>
-                                        @elseif(isset($pendingMentorIds) && in_array($mentor->id, $pendingMentorIds))
+                                        @elseif(isset($pendingMentorIdsList) && in_array($mentor->id, $pendingMentorIdsList))
                                             <span class="badge bg-warning text-dark">Requested</span>
                                         @else
                                             <span class="text-muted small">Contact an admin to assign a mentor.</span>

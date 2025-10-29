@@ -13,16 +13,16 @@ class MentorDirectoryController extends Controller
             return redirect()->route('login');
         }
 
-        $mentors = User::where('is_mentor', true)
+        $mentorsArray = User::where('is_mentor', true)
             ->orderBy('name')
             ->get(['id', 'name', 'email', 'phone']);
 
-        $pendingMentorIds = \App\Models\MentorRequest::where('user_id', auth()->id())
+        $pendingMentorIdsList = \App\Models\MentorRequest::where('user_id', auth()->id())
             ->where('status', 'pending')
             ->pluck('mentor_id')
             ->toArray();
 
-        return view('mentors.index', compact('mentors', 'pendingMentorIds'));
+        return view('mentors.index', compact('mentorsArray', 'pendingMentorIdsList'));
     }
 }
 
